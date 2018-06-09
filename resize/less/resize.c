@@ -112,51 +112,49 @@ int main(int argc, char *argv[])
     // iterate over infiles's scanline (Vertically)
     for (int i = 0, bi_Height = abs(originalHeight); i < bi_Height; i++)
     {
-        RGBTRIPLE *arr = malloc(sizeof(RGBTRIPLE) * (bi.biWidth));  // this key thing I did wrong
-        if (arr == NULL)
+        for (int j = 0; j < (scale - 1); j++)  // for n - 1 times
         {
-            fprintf(stderr, "The memory required is not available.\n");
-            printf("The memory required is not available.\n");
-            return 5;
-        }
-
-        int tracker = 0;
-        // iterate over pixals in scanline (Horizontally)
-        for (int j = 0; j < originalWidth; j++)
-        {
+          // this is to find each pixel in the row
+          for (int k = 0; k < originalWidth; k++)
+          {
             //Pixle combination
             RGBTRIPLE triple;
 
             // reading RGBTRIPLE from infile(basically copying it)
             fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
 
-            // for each pixel writing to the array 'n' times
-            for (int n = 0; n < scale; n++)
-            {
-                *(arr + (tracker)) = triple;  // using pointer arithmatic
-                tracker++;
-            }
-        }
-        // writing the arr to outfile for 'n' times
-        for (int m = 0; m < scale; m++)
-        {
-            fwrite((arr), sizeof(RGBTRIPLE), bi.biWidth, outptr);  // it should include the triples
-                          // as according to scale
-            // add the padding to outfile as of scale (to demonstrate how)
+            fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);  // it should include the triples
+            // writing the outfile padding
             for (int k = 0; k < padding_out; k++)
             {
                 fputc(0x00, outptr);
             }
+            // send back the infile cursor back to its position
+            fseek(inptr, padding_in, SEEK_SET);
+          }
+
+        }  // n - 1 times loop ends
+
+        // this is to find each pixel in the row
+        for (int k = 0; k < originalWidth; k++)
+        {
+          //Pixle combination
+          RGBTRIPLE triple;
+
+          // reading RGBTRIPLE from infile(basically copying it)
+          fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
+
+          fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);  // it should include the triples
+          // writing the outfile padding
+          for (int k = 0; k < padding_out; k++)
+          {
+              fputc(0x00, outptr);
+          }
+          // skip over the infile padding
+          fseek(inptr, padding_in, SEEK_CUR);
         }
 
-        // skip over padding, if any (in the infile, to prepare to move to the next row)
-        fseek(inptr, padding_in, SEEK_CUR);
-
-        //}
-        
-        free(arr);  // freeying the memory
     }
-
 
     // close infile
     fclose(inptr);
