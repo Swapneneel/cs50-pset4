@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
             printf("The memory required is not available.\n");
             return 5;
         }
-        
+
         int tracker = 0;
         // iterate over pixals in scanline (Horizontally)
         for (int j = 0; j < originalWidth; j++)
@@ -153,9 +153,10 @@ int main(int argc, char *argv[])
         fseek(inptr, padding_in, SEEK_CUR);
 
         //}
+        
+        free(arr);  // freeying the memory
     }
 
-    free(arr);  // freeying the memory
 
     // close infile
     fclose(inptr);
