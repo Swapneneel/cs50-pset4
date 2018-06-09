@@ -108,17 +108,18 @@ int main(int argc, char *argv[])
      * Trying to implement rewrite method for resizing the BMP
      * Not wprking properly yet.May be the method is not yet properly yet. Let's see.
      **********************************/
-    RGBTRIPLE *arr = malloc(sizeof(RGBTRIPLE) * (bi.biWidth));  // this key thing I did wrong
-    if (arr == NULL)
-    {
-        fprintf(stderr, "The memory required is not available.\n");
-        printf("The memory required is not available.\n");
-        return 5;
-    }
 
     // iterate over infiles's scanline (Vertically)
     for (int i = 0, bi_Height = abs(originalHeight); i < bi_Height; i++)
     {
+        RGBTRIPLE *arr = malloc(sizeof(RGBTRIPLE) * (bi.biWidth));  // this key thing I did wrong
+        if (arr == NULL)
+        {
+            fprintf(stderr, "The memory required is not available.\n");
+            printf("The memory required is not available.\n");
+            return 5;
+        }
+        
         int tracker = 0;
         // iterate over pixals in scanline (Horizontally)
         for (int j = 0; j < originalWidth; j++)
