@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
         fseek(inptr, padding_in, SEEK_CUR);
 
         //}
-        
+
         free(arr);  // freeying the memory
     }
 
