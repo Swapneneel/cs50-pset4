@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
         // writing the arr to outfile for 'n' times
         for (int m = 0; m < scale; m++)
         {
-            fwrite((arr), sizeof(RGBTRIPLE), bi.biWidth, outptr);  // it should include the triples
+            fwrite((arr), sizeof(RGBTRIPLE), scale, outptr);  // it should include the triples
                           // as according to scale
             // add the padding to outfile as of scale (to demonstrate how)
             for (int k = 0; k < padding_out; k++)
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
         fseek(inptr, padding_in, SEEK_CUR);
 
         //}
-        
+
         free(arr);  // freeying the memory
     }
 
