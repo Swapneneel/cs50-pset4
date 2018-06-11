@@ -143,6 +143,7 @@ int main(int argc, char *argv[])
         {
             fwrite((arr), sizeof(RGBTRIPLE), bi.biWidth, outptr);  // it should include the triples
             // as according to scale
+
             // add the padding to outfile as of scale (to demonstrate how)
             for (int k = 0; k < padding_out; k++)
             {
