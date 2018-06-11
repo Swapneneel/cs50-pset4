@@ -85,12 +85,13 @@ int main(int argc, char *argv[])
 
     // determine padding for iterating over scanline (i.e. infile's padding)
     int padding_in = (4 - (originalWidth * sizeof(RGBTRIPLE)) % 4) % 4;
-    // determine padding for the outfile
-    int padding_out = (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
 
     // updating the BITMAPINFOHEADER according to outfile
     bi.biWidth *= scale;  // Width of outfile = n * infile
     bi.biHeight *= scale;  // Height of outfile = n * infile
+
+    // determine padding for the outfile
+    int padding_out = (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
 
     // biSizeImage is the total size of the image in bytes including paddings
     bi.biSizeImage = ((sizeof(RGBTRIPLE) * bi.biWidth) + padding_out) * abs(bi.biHeight);
@@ -140,7 +141,7 @@ int main(int argc, char *argv[])
         // writing the arr to outfile for 'n' times
         for (int m = 0; m < scale; m++)
         {
-            fwrite((arr), sizeof(RGBTRIPLE), scale, outptr);  // it should include the triples
+            fwrite((arr), sizeof(RGBTRIPLE), bi.biWidth, outptr);  // it should include the triples
                           // as according to scale
             // add the padding to outfile as of scale (to demonstrate how)
             for (int k = 0; k < padding_out; k++)
