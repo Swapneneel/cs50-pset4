@@ -2,6 +2,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+
+#include "header.h"
 
 
 int main(int argc, char *argv[])
@@ -24,52 +27,46 @@ int main(int argc, char *argv[])
         return 2;
     }  // upto ok
 
-    // reading the infile for 512 bytes at a time
-    int n = sizeof(inptr) / 512, track = 0;  // the box is
-    char *card = malloc(sizeof(inptr));
-    fread(card, 512, n, inptr);  // reading the data of card to the string
+    JPEG *one_box = malloc(512);  // one box with size 512 bytes
 
-    char* outfile, outfile_opened;
-    // the tracker for a new jpeg header
-    int found = 0, found_prev = found;
+    int found = 0, found_prev;
 
-    for (int i = 0; i < n; i++)  // at the begining entire file is a sequence of blocks of size 512 bytes
+    char *outfile = NULL;  // file name string
+    FILE *outptr = NULL;  // outfile pointer name
+
+    while (fread(one_box, 512, 1, inptr) == 1)
     {
-        // read 512 byte box from the line of memory card data
-        char *one_box = malloc(512);
-        *one_box = *(card + i);
-        bool new_found = FALSE;
-
-        // condition for Jpeg's header file
-        if (*(one_box + 0) == 0xff && *(one_box + 1) == 0xd8 && *(one_box + 2) == 0xff && (*(one_box + 3) & 0xf0) == 0xe0)
-        {
+      if (*(one_box + 0) == 0xff && *(one_box + 1) == 0xd8 && *(one_box + 2) == 0xff &&
+             (*(one_box + 3) & 0xf0) == 0xe0)
+      {
           found++;
-          new_found = TRUE;
-        }
-        if (new_found)
-        {
-          if (found > 1)  // it does mean that already first one is opened, and to be closed
+
+          // close the file previously opened
+          if (found > 1)
           {
-            fclose(outfile_opened);
+              fclose(outptr);
           }
-          sprintf(outfile, "%03i.jpg", found);
-          FILE *outptr = fopen(outfile, "w");
-          outfile_opened = outptr;
-        }
 
-        if (found > found_prev)
-        {
-          //
-          fwrite(one_box, 512, 1, outfile_opened);
-        }
+          // file name & file opening for reading
+          fprintf(outfile, "%03i.jpg", found);
+          *outptr = fopen(outfile, "w");
+          if (outptr == NULL)
+          {
+            // error message for not opening the outfile
+            fprintf(stderr, "Could not create %s.\n", outfile);
+            return 3;
+          }
+      }
 
-        // free the one_box
-        free(one_box);
+      if (found > 0)  // wtite only when after found the 1st one
+      {
+          fwrite(one_box, 512, 1, outptr);
+      }
 
-    }  // head loop ends
+      // free the alocated memory
+      free(one_box);
+    }
 
-    // free card
-    free(card);
 
     return 0;  // main on success
 }
