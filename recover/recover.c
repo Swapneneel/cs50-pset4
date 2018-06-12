@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     int found = 0, found_prev;
 
     char *outfile = NULL;  // file name string
-    FILE *outptr = NULL;  // outfile pointer name
+    FILE *outptr;  // outfile pointer name
 
     while (fread(one_box, 512, 1, inptr) == 1)
     {
@@ -48,8 +48,8 @@ int main(int argc, char *argv[])
           }
 
           // file name & file opening for reading
-          fprintf(outfile, "%03i.jpg", found);
-          *outptr = fopen(outfile, "w");
+          sprintf(outfile, "%03i.jpg", found);
+          outptr = fopen(outfile, "w");  // no need to put the * sign, only write the variable name
           if (outptr == NULL)
           {
             // error message for not opening the outfile
