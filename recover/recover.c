@@ -41,9 +41,13 @@ int main(int argc, char *argv[])
     char *outfile = NULL;  // file name string
     FILE *outptr_opened = NULL;  // outfile pointer name
 
-    int n = sizeof(inptr) / 512;
+    fseek(inptr, 0L, SEEK_END);
+    long int n = ftell(inptr) / 512;
+    // printf("n = %li\n", n);
 
-    for (int i = 0; i < n; i++)
+    fseek(inptr, 0L, SEEK_SET);
+
+    for (long int i = 0; i < n; i++)
     {
         JPEG *one_box = malloc(sizeof(JPEG) * 512);  // one box with size 512 bytes
         if (one_box == NULL)  // show error if asked memory not available
@@ -80,8 +84,10 @@ int main(int argc, char *argv[])
 
         if (found > 0)  // wtite only when after found the 1st one
         {
-            fwrite(one_box, 512, 1, outptr_opened);  // 512 byte each time
+            fwrite(one_box, sizeof(JPEG), 512, outptr_opened);  // 512 byte each time
         }
+
+        // fseek(inptr, 512, SEEK_CUR);
 
         // free the alocated memory
         free(one_box);
