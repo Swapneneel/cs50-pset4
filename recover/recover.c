@@ -34,50 +34,57 @@ int main(int argc, char *argv[])
         return 2;
     }  // upto ok
 
-    JPEG *one_box = NULL;  // one box with size 512 bytes
-    /*if (one_box == NULL)  // show error if asked memory not available
-    {
-        fprintf(stderr, "The memory required is not available.\n");
-        printf("The memory required is not available.\n");
-        return 3;
-    } */
+
 
     int found = 0;
 
     char *outfile = NULL;  // file name string
-    FILE *outptr;  // outfile pointer name
+    FILE *outptr_opened = NULL;  // outfile pointer name
 
-    while (fread(one_box, sizeof(JPEG), 512, inptr) == 512)
+    int n = sizeof(inptr) / 512;
+
+    for (int i = 0; i < n; i++)
     {
-      if (one_box[0].byte_each == 0xff && one_box[1].byte_each == 0xd8 &&
-               one_box[2].byte_each == 0xff && (one_box[3].byte_each & 0xf0) == 0xe0)
-      {
-          found++;
-
-          // close the file previously opened
-          if (found > 1)
-          {
-              fclose(outptr);
-          }
-
-          // file name & file opening for reading
-          sprintf(outfile, "%03i.jpg", (found - 1));
-          outptr = fopen(outfile, "w");  // no need to put the * sign, only write the variable name
-          if (outptr == NULL)
-          {
-            // error message for not opening the outfile
-            fprintf(stderr, "Could not create %s.\n", outfile);
+        JPEG *one_box = malloc(sizeof(JPEG) * 512);  // one box with size 512 bytes
+        if (one_box == NULL)  // show error if asked memory not available
+        {
+            fprintf(stderr, "The memory required is not available.\n");
+            printf("The memory required is not available.\n");
             return 3;
-          }
-      }
+        }
 
-      if (found > 0)  // wtite only when after found the 1st one
-      {
-          fwrite(one_box, 512, 1, outptr);
-      }
+        fread(one_box, sizeof(JPEG), 512, inptr);
 
-      // free the alocated memory
-      // one_box = calloc(1, 512);
+        if (one_box[0].byte_each == 0xff && one_box[1].byte_each == 0xd8 &&
+               one_box[2].byte_each == 0xff && (one_box[3].byte_each & 0xf0) == 0xe0)
+        {
+              found++;
+
+            // close the file previously opened
+            if (found > 1)
+            {
+                fclose(outptr_opened);
+            }
+
+            // file name & file opening for reading
+            sprintf(outfile, "%03i.jpg", (found - 1));
+            FILE *outptr = fopen(outfile, "w");  // no need to put the * sign, only write the variable name
+            if (outptr == NULL)
+            {
+                // error message for not opening the outfile
+                fprintf(stderr, "Could not create %s.\n", outfile);
+                return 3;
+            }
+            *outptr = *outptr_opened;
+        }
+
+        if (found > 0)  // wtite only when after found the 1st one
+        {
+            fwrite(one_box, 512, 1, outptr_opened);  // 512 byte each time
+        }
+
+        // free the alocated memory
+        free(one_box);
     }
 
     // free one_box
