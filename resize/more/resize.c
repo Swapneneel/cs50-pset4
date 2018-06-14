@@ -14,7 +14,8 @@ int main(int argc, char* argv[])
     }
     else
     {
-        float
+        // convert to float
+        float scale = atof(argv[1]);
     }
     return 0;
 }
