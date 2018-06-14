@@ -1,0 +1,8 @@
+//Notes for the implementation of Recover File
+*** Primary steps::
+****** Open memory card
+******** || FILE *card = fopen(argv[1], "r"); // check for null return
+****** find begining of JPEG
+****** open a new JPEG
+****** write 512 bytes at a time until new JPEG is found
+****** detect end of file

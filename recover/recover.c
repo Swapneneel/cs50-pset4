@@ -27,12 +27,12 @@ int main(int argc, char *argv[])
 
 
     // open input file
-    FILE *inptr = fopen(argv[1], "r");
-    if (inptr == NULL)
+    FILE *card = fopen(argv[1], "r");
+    if (card == NULL)
     {
         fprintf(stderr, "Counld not open the %s.raw file.\n", argv[1]);
         return 2;
-    }  // upto ok
+    }  // checked
 
 
 
