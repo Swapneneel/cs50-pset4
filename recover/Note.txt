@@ -3,6 +3,7 @@
 ****** Open memory card
 ******** || FILE *card = fopen(argv[1], "r"); // check for null return
 ****** find begining of JPEG
+******** || fread(&file, sizeof(JPEG), 512, card);
 ****** open a new JPEG
 ****** write 512 bytes at a time until new JPEG is found
 ****** detect end of file
