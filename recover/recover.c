@@ -9,10 +9,9 @@
 
 typedef uint8_t BYTE;  // it was uint not unit == > uint stands for unsigned integer
 
-typedef struct
-{
+typedef struct {
     BYTE byte_each;
-} __attribute__((__packed__))
+} __attribute__ ((__packed__))
 JPEG;
 
 // definition of struct ended
@@ -33,66 +32,65 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "Counld not open the %s.raw file.\n", argv[1]);
         return 2;
-    }  // upto ok
+    }  // checked
 
 
 
     int found = 0;
 
-    char outfile[8];  // file name char array
-    FILE *img = NULL;  // outfile pointer name
+    char *outfile = NULL;  // file name string
+    FILE *outptr_opened = NULL;  // outfile pointer name
 
-    JPEG *one_box = malloc(sizeof(JPEG) * 512);  // one box with size 512 bytes
-    if (one_box == NULL)  // show error if asked memory not available
-    {
-        fprintf(stderr, "The memory required is not available.\n");
-        printf("The memory required is not available.\n");
-        return 3;
-    }
+    int n = sizeof(inptr) / 512;
 
-    // till the end of the file card
-    while (fread(one_box, sizeof(one_box), 1, card) > 0)  // fread on successfull transection returns no of files read
+    for (int i = 0; i < n; i++)
     {
-        // this will check all the possible JPEG header options
-        if (one_box[0].byte_each == 0xff && one_box[1].byte_each == 0xd8 &&
-            one_box[2].byte_each == 0xff && (one_box[3].byte_each & 0xf0) == 0xe0)
+        JPEG *one_box = malloc(sizeof(JPEG) * 512);  // one box with size 512 bytes
+        if (one_box == NULL)  // show error if asked memory not available
         {
-            // it will count up when a new JPEG is found
-            found++;
+            fprintf(stderr, "The memory required is not available.\n");
+            printf("The memory required is not available.\n");
+            return 3;
+        }
+
+        fread(one_box, sizeof(JPEG), 512, inptr);
+
+        if (one_box[0].byte_each == 0xff && one_box[1].byte_each == 0xd8 &&
+               one_box[2].byte_each == 0xff && (one_box[3].byte_each & 0xf0) == 0xe0)
+        {
+              found++;
 
             // close the file previously opened
             if (found > 1)
             {
-                fclose(img);
+                fclose(outptr_opened);
             }
 
             // file name & file opening for reading
             sprintf(outfile, "%03i.jpg", (found - 1));
-            img = fopen(outfile, "a");  // no need to put the * sign, only write the variable name
-            if (img == NULL)
+            FILE *outptr = fopen(outfile, "w");  // no need to put the * sign, only write the variable name
+            if (outptr == NULL)
             {
                 // error message for not opening the outfile
                 fprintf(stderr, "Could not create %s.\n", outfile);
-                return 4;
+                return 3;
             }
-            // write 512 byte at once
-            fwrite(one_box, sizeof(one_box), 1, img);
-
+            *outptr = *outptr_opened;
         }
-        else
+
+        if (found > 0)  // wtite only when after found the 1st one
         {
-            if (found > 0)  // it will write if a file is already opened
-            {
-                fwrite(one_box, sizeof(one_box), 1, img);  // 512 byte each time
-            }
+            fwrite(one_box, 512, 1, outptr_opened);  // 512 byte each time
         }
 
+        // free the alocated memory
+        free(one_box);
     }
-    // free img
-    free(img);
 
-    // close the card
-    fclose(card);
+    // free one_box
+    //free(one_box);
+
+    fclose(inptr);
 
     return 0;  // main on success
 }

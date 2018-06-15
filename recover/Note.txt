@@ -6,8 +6,12 @@
 ******** || fread(&file, sizeof(JPEG), 512, card);
 ****** open a new JPEG
 ****** write 512 bytes at a time until new JPEG is found
+<<<<<<< HEAD
 ****** detect end of file
 
 
 ***File opening permission "a" == append is very usefull and it will hep the file already opened to modify
  further.
+=======
+****** detect end of file
+>>>>>>> resize_more-v0.1
