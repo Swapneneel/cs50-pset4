@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
     {
         fclose(inptr);
         fclose(outptr);
-        fprintf(stderr, "Unsupported file format %s\n", infile);
+        fprintf(stderr, "Unsupported file format %s\n", argv[2]);
         return 4;
     }
 
@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
     int originalHeight = bi.biHeight;
 
     // determine the padding of the infile
-    int paddig_in = (4 - (originalWidth * sizeof(RGBTRIPLE)) % 4) % 4;
+    int padding_in = (4 - (originalWidth * sizeof(RGBTRIPLE)) % 4) % 4;
 
     // modifying the Height & Width for outfile
     bi.biWidth *= scale;
@@ -83,6 +83,62 @@ int main(int argc, char* argv[])
     fwrite(&bi, sizeof(BITMAPINFOHEADER), 1, outptr);
 
     // itera
+
+    for (int i = 0, bi_Height = abs(originalHeight); i < bi_Height; i++)
+    {
+        RGBTRIPLE *arr = malloc(sizeof(RGBTRIPLE) * (bi.biWidth));  // this key thing I did wrong
+        if (arr == NULL)
+        {
+            fprintf(stderr, "The memory required is not available.\n");
+            printf("The memory required is not available.\n");
+            return 5;
+        }
+
+        int tracker = 0;
+        // iterate over pixals in scanline (Horizontally)
+        for (int j = 0; j < originalWidth; j++)
+        {
+            //Pixle combination
+            RGBTRIPLE triple;
+
+            // reading RGBTRIPLE from infile(basically copying it)
+            fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
+
+            // for each pixel writing to the array 'n' times
+            for (float n = 0.0; n < scale; n++)
+            {
+                *(arr + (tracker)) = triple;  // using pointer arithmatic
+                tracker++;
+            }
+        }
+        // writing the arr to outfile for 'n' times
+        for (float m = 0.0; m < scale; m++)
+        {
+            fwrite((arr), sizeof(RGBTRIPLE), bi.biWidth, outptr);  // it should include the triples
+            // as according to scale
+
+            // add the padding to outfile as of scale (to demonstrate how)
+            for (int k = 0; k < padding_out; k++)
+            {
+                fputc(0x00, outptr);
+            }
+        }
+
+        // skip over padding, if any (in the infile, to prepare to move to the next row)
+        fseek(inptr, padding_in, SEEK_CUR);
+
+        //}
+
+        free(arr);  // freeying the memory
+    }
+
+
+    // close infile
+    fclose(inptr);
+
+    // close outfile
+    fclose(outptr);
+
 
 
     return 0;
