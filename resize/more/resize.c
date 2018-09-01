@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "bmp.h"
 
@@ -16,7 +17,7 @@ int main(int argc, char* argv[])
     // convert to float
     float scale = atof(argv[1]);
     // verifying the scale accourding to specs
-    if (scale < 0.0 || scale > 100.0)  // the case is not expected
+    if (scale < 0.00 || scale > 100.00)  // the case is not expected
     {
         fprintf(stderr, "Useage: %s should be between 0.0 and 100.0", argv[1]);
         return 1;
@@ -65,8 +66,8 @@ int main(int argc, char* argv[])
     int padding_in = (4 - (originalWidth * sizeof(RGBTRIPLE)) % 4) % 4;
 
     // modifying the Height & Width for outfile
-    bi.biWidth *= scale;
-    bi.biHeight *= scale;
+    bi.biWidth = round(scale * bi.biWidth);  // modification
+    bi.biHeight = round(scale * bi.biHeight);  // round() function to rounding off float values
 
     // determine padding for the outfile
     int padding_out = (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
@@ -82,54 +83,59 @@ int main(int argc, char* argv[])
     fwrite(&bf, sizeof(BITMAPFILEHEADER), 1, outptr);
     fwrite(&bi, sizeof(BITMAPINFOHEADER), 1, outptr);
 
-    // itera
 
+    // Scanning through the entire scanline
     for (int i = 0, bi_Height = abs(originalHeight); i < bi_Height; i++)
     {
-        RGBTRIPLE *arr = malloc(sizeof(RGBTRIPLE) * (bi.biWidth));  // this key thing I did wrong
-        if (arr == NULL)
+        // Checking if it is a enlargement or contration
+        if (scale < 1.00)
         {
-            fprintf(stderr, "The memory required is not available.\n");
-            printf("The memory required is not available.\n");
-            return 5;
-        }
-
-        int tracker = 0;
-        // iterate over pixals in scanline (Horizontally)
-        for (int j = 0; j < originalWidth; j++)
-        {
-            //Pixle combination
-            RGBTRIPLE triple;
-
-            // reading RGBTRIPLE from infile(basically copying it)
-            fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
-
-            // for each pixel writing to the array 'n' times
-            for (float n = 0.0; n < scale; n++)
+            // downscale
+            /* RGBTRIPLE *arr = malloc(sizeof(RGBTRIPLE) * (bi.biWidth));  // this key thing I did wrong
+            if (arr == NULL)
             {
-                *(arr + (tracker)) = triple;  // using pointer arithmatic
-                tracker++;
+                fprintf(stderr, "The memory required is not available.\n");
+                printf("The memory required is not available.\n");
+                return 5;
+            }
+            // Intermediate codes will be there
+            free(arr)
+            */
+            // rounding of scale
+            //scale = round(scale);
+            printf("Not yet done, complete. Bdw you hit the right place.\n");
+        }
+        else if (scale > 1.00)
+        {
+            // upscale
+            // rounding of scale
+            // scale = round(scale);
+            printf("Not yet done, complete. Bdw you hit the right place.\n");
+        }
+        else
+        {
+            // simple copy & paste
+            for (int j = 0; j < originalWidth; j++)
+            {
+                RGBTRIPLE triple;
+
+                // Read the pixals from the input file
+                fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
+
+                // Coppying the pixal to the outfile
+                fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
             }
         }
-        // writing the arr to outfile for 'n' times
-        for (float m = 0.0; m < scale; m++)
-        {
-            fwrite((arr), sizeof(RGBTRIPLE), bi.biWidth, outptr);  // it should include the triples
-            // as according to scale
 
-            // add the padding to outfile as of scale (to demonstrate how)
-            for (int k = 0; k < padding_out; k++)
-            {
-                fputc(0x00, outptr);
-            }
-        }
 
         // skip over padding, if any (in the infile, to prepare to move to the next row)
         fseek(inptr, padding_in, SEEK_CUR);
 
-        //}
-
-        free(arr);  // freeying the memory
+        // add the padding again to the outptr file
+        for (int k = 0; k < padding_out; k++)
+        {
+            fputc(0x00, outptr);
+        }
     }
 
 
@@ -143,3 +149,6 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+
+// Look at this for more info: https://cs50.stackexchange.com/questions/9956/hacker4-resize-cant-resize-when-factor-is-a-decimal-number
+// This is also a good example http://www.davdata.nl/math/bmresize.html
