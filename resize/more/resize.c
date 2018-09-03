@@ -66,8 +66,9 @@ int main(int argc, char* argv[])
     int padding_in = (4 - (originalWidth * sizeof(RGBTRIPLE)) % 4) % 4;
 
     // modifying the Height & Width for outfile
-    bi.biWidth = round(scale * bi.biWidth);  // modification
-    bi.biHeight = round(scale * bi.biHeight);  // round() function to rounding off float values
+    bi.biWidth = floor(scale * bi.biWidth);  // modification
+    bi.biHeight = floor(scale * bi.biHeight);  // floor() to used, not to exceed the non-decimal value
+    //---------------------------------++++++++++++++++++------------------------------------
 
     // determine padding for the outfile
     int padding_out = (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
@@ -88,9 +89,8 @@ int main(int argc, char* argv[])
     for (int i = 0, bi_Height = abs(originalHeight); i < bi_Height; i++)
     {
         // Checking if it is a enlargement or contration
-        if (scale < 1.00)
+        if (scale < 1.00)  // downscale
         {
-            // downscale
             /* RGBTRIPLE *arr = malloc(sizeof(RGBTRIPLE) * (bi.biWidth));  // this key thing I did wrong
             if (arr == NULL)
             {
@@ -101,11 +101,21 @@ int main(int argc, char* argv[])
             // Intermediate codes will be there
             free(arr)
             */
-            // rounding of scale
-            //scale = round(scale);
-            printf("Not yet done, complete. Bdw you hit the right place.\n");
+            //
+            int v = (int) (originalWidth / bi.biWidth);
+            for (int j = 0; j < originalWidth; j+=v)
+            {
+                RGBTRIPLE triple;
+
+                // read the pixel to be used
+                fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
+
+                // write the scanlines as many as need
+                fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+            }
+            //printf("Not yet done, complete. Bdw you hit the right place.\n");
         }
-        else if (scale > 1.00)
+        else if (scale > 1.00)  // upscale
         {
             // upscale
             // rounding of scale
@@ -150,5 +160,3 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-// Look at this for more info: https://cs50.stackexchange.com/questions/9956/hacker4-resize-cant-resize-when-factor-is-a-decimal-number
-// This is also a good example http://www.davdata.nl/math/bmresize.html
