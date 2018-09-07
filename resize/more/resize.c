@@ -67,7 +67,8 @@ int main(int argc, char* argv[])
 
     // modifying the Height & Width for outfile
     bi.biWidth = floor(scale * bi.biWidth);  // modification
-    bi.biHeight = floor(scale * bi.biHeight);  // floor() to used, not to exceed the non-decimal value
+    // Try to consider the case of Bottom-Up
+    bi.biHeight = floor(scale * (bi.biHeight > 0? -bi.biHeight : bi.biHeight));  // floor() to used, not to exceed the non-decimal value
     //---------------------------------++++++++++++++++++------------------------------------
 
     // determine padding for the outfile
@@ -85,25 +86,17 @@ int main(int argc, char* argv[])
     fwrite(&bi, sizeof(BITMAPINFOHEADER), 1, outptr);
 
 
-    // Scanning through the entire scanline
-    for (int i = 0, bi_Height = abs(originalHeight); i < bi_Height; i++)
+    // Code for downscaling
+    if (scale < 1.00)
     {
-        // Checking if it is a enlargement or contration
-        if (scale < 1.00)  // downscale
+        // Calulating which of them to select
+        int h = round(1 / scale);
+        // int v = (int) (originalHeight / bi.biHeight);
+
+        // only selecting the scanline which is going to resultent
+        for (int i = 0, bi_Height = abs(originalHeight); i < bi_Height; i++)
         {
-            /* RGBTRIPLE *arr = malloc(sizeof(RGBTRIPLE) * (bi.biWidth));  // this key thing I did wrong
-            if (arr == NULL)
-            {
-                fprintf(stderr, "The memory required is not available.\n");
-                printf("The memory required is not available.\n");
-                return 5;
-            }
-            // Intermediate codes will be there
-            free(arr)
-            */
-            //
-            int v = (int) (originalWidth / bi.biWidth);
-            for (int j = 0; j < originalWidth; j+=v)
+            for (int j = 0; j < originalWidth; j++)
             {
                 RGBTRIPLE triple;
 
@@ -112,39 +105,87 @@ int main(int argc, char* argv[])
 
                 // write the scanlines as many as need
                 fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+
+                // skip the rejected triple
+                fseek(inptr, sizeof(RGBTRIPLE) * (h - 1), SEEK_CUR);
             }
-            //printf("Not yet done, complete. Bdw you hit the right place.\n");
+
+            // skip over padding, if any (in the infile, to prepare to move to the next row)
+            fseek(inptr, padding_in, SEEK_CUR);
+
+            // add the padding again to the outptr file
+            for (int k = 0; k < padding_out; k++)
+            {
+                fputc(0x00, outptr);
+            }
+
+            // skip the rejected horizontal line
+            fseek(inptr, ((sizeof(RGBTRIPLE) * (originalWidth * (h - 1))) + padding_in), SEEK_CUR);
         }
-        else if (scale > 1.00)  // upscale
+    }
+
+    // Upscaling
+    else if (scale > 1.00)
+    {
+        // Calulating which of them to select
+        scale = round(scale);
+
+        // only selecting the scanline which is going to resultent
+        for (int i = 0, bi_Height = abs(originalHeight); i < bi_Height; i++)
         {
-            // upscale
-            // rounding of scale
-            // scale = round(scale);
-            printf("Not yet done, complete. Bdw you hit the right place.\n");
-        }
-        else
-        {
-            // simple copy & paste
             for (int j = 0; j < originalWidth; j++)
             {
                 RGBTRIPLE triple;
 
-                // Read the pixals from the input file
+                // read the pixel to be used
                 fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
 
-                // Coppying the pixal to the outfile
+                // write the scanlines as many as need
+                for (int m = 0; m < scale; m++)
+                {
+                    fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+                }
+            }
+
+            // skip over padding, if any (in the infile, to prepare to move to the next row)
+            fseek(inptr, padding_in, SEEK_CUR);
+
+            // add the padding again to the outptr file
+            for (int k = 0; k < padding_out; k++)
+            {
+                fputc(0x00, outptr);
+            }
+
+            // skip the rejected horizontal line
+            fseek(inptr, ((sizeof(RGBTRIPLE) * originalHeight) + padding_in), SEEK_CUR);
+        }
+    }
+
+    // For same size, copy and paste
+    else
+    {
+        // scanning through the entire scaline
+        for (int i = 0, bi_Height = abs(originalHeight); i < bi_Height; i++)
+        {
+            for (int j = 0; j < originalWidth; j++)
+            {
+                RGBTRIPLE triple;
+
+                // read the pixel form infile
+                fread(&triple, sizeof(RGBTRIPLE), 1 , inptr);
+
+                // write the pixel to outfile
                 fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
             }
-        }
 
+            // skip over padding, if any (in the infile, to prepare to move to the next row)
+            fseek(inptr, padding_in, SEEK_CUR);
 
-        // skip over padding, if any (in the infile, to prepare to move to the next row)
-        fseek(inptr, padding_in, SEEK_CUR);
-
-        // add the padding again to the outptr file
-        for (int k = 0; k < padding_out; k++)
-        {
-            fputc(0x00, outptr);
+            // add the padding again to the outptr file
+            for (int k = 0; k < padding_out; k++)
+            {
+                fputc(0x00, outptr);
+            }
         }
     }
 
