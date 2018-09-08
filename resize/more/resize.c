@@ -66,9 +66,9 @@ int main(int argc, char* argv[])
     int padding_in = (4 - (originalWidth * sizeof(RGBTRIPLE)) % 4) % 4;
 
     // modifying the Height & Width for outfile
-    bi.biWidth = floor(scale * bi.biWidth);  // modification
+    bi.biWidth = scale * bi.biWidth;  // modification
     // Try to consider the case of Bottom-Up
-    bi.biHeight = floor(scale * (bi.biHeight > 0? -bi.biHeight : bi.biHeight));  // floor() to used, not to exceed the non-decimal value
+    bi.biHeight = scale * bi.biHeight;  // floor() to used, not to exceed the non-decimal value
     //---------------------------------++++++++++++++++++------------------------------------
 
     // determine padding for the outfile
@@ -89,25 +89,77 @@ int main(int argc, char* argv[])
     // Code for downscaling
     if (scale < 1.00)
     {
-        // Calulating which of them to select
-        int h = round(1 / scale);
-        // int v = (int) (originalHeight / bi.biHeight);
+        float f, fi, fStep, sY1, sY2, jstart, jend, sX1, sX2, istart, iend, dy, dx, area;
 
-        // only selecting the scanline which is going to resultent
-        for (int i = 0, bi_Height = abs(originalHeight); i < bi_Height; i++)
+        // calculating set "A"
+        f = 1 / scale;
+        fi = scale * scale;
+        fStep = f * 0.9999;
+
+        // along destination height
+        for (int y = 0, des_Height = abs(bi.biHeight); y < des_Height; y++)
         {
-            for (int j = 0; j < originalWidth; j++)
+            // calculate set "B"
+            sY1 = y * f;
+            sY2 = sY1 + fStep;
+            jstart = floor(sY1);
+            jend = ceil(sY2) - 1;
+
+            // along destination width
+            for (int x = 0; x < bi.biWidth; x++)
             {
-                RGBTRIPLE triple;
+                // calculate set "C"
+                sX1 = x * f;
+                sX2 = sX1 + fStep;
+                istart = floor(sX1);
+                iend = ceil(sX2) - 1;
 
-                // read the pixel to be used
-                fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
+                // defining the output file one pixel
+                RGBTRIPLE triple, pixel;
 
-                // write the scanlines as many as need
-                fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+                // along original height
+                for (float j = jstart; j < jend; j++)
+                {
+                    // deciding the size of output pixel, y co-ordinate
+                    dy = 1;
+                    if (sY1 > j)
+                    {
+                        dy = dy - (sY1 - j);
+                    }
+                    if (sY2 < j + 1)
+                    {
+                        dy = dy - (j + 1 - sY2);
+                    }
 
-                // skip the rejected triple
-                fseek(inptr, sizeof(RGBTRIPLE) * (h - 1), SEEK_CUR);
+                    // along original width
+                    for (float i = istart; i < iend; i++)
+                    {
+                        // deciding the size of output pixel, x co-ordinate
+                        dx = 1;
+                        if (sX1 > i)
+                        {
+                            dx = dx - (sX1 - i);
+                        }
+                        if (sX2 < i + 1)
+                        {
+                            dx = dx - (i + 1 - sX2);
+                        }
+
+                        // area of the destination pixel
+                        area = dx * dy * fi;
+
+                        // reading the triple from original file's section
+                        fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
+
+                        // here modifications for all the colours will be done
+                        pixel.rgbtBlue += trunc(triple.rgbtBlue * area);
+                        pixel.rgbtRed += trunc(triple.rgbtRed * area);
+                        pixel.rgbtGreen += trunc(triple.rgbtGreen * area);
+                    }
+                }
+
+                // writing the pixel to the destination file
+                fwrite(&pixel, sizeof(RGBTRIPLE), 1, outptr);
             }
 
             // skip over padding, if any (in the infile, to prepare to move to the next row)
@@ -118,47 +170,56 @@ int main(int argc, char* argv[])
             {
                 fputc(0x00, outptr);
             }
-
-            // skip the rejected horizontal line
-            fseek(inptr, ((sizeof(RGBTRIPLE) * (originalWidth * (h - 1))) + padding_in), SEEK_CUR);
         }
     }
 
     // Upscaling
     else if (scale > 1.00)
     {
-        // Calulating which of them to select
-        scale = round(scale);
+        // memory allocation for array
+        RGBTRIPLE *buff = malloc(sizeof(RGBTRIPLE) * (bi.biWidth));
 
-        // only selecting the scanline which is going to resultent
-        for (int i = 0, bi_Height = abs(originalHeight); i < bi_Height; i++)
+        // setting up the counter
+        int count = 0;
+
+        // looping over the infile's height
+        for (int j = 0, bi_Height = abs(originalHeight); j < bi_Height; j++)
         {
-            for (int j = 0; j < originalWidth; j++)
+            // looping over the infile's height
+            for (int i = 0; i < originalWidth; i++)
             {
                 RGBTRIPLE triple;
 
-                // read the pixel to be used
+                // read the triple
                 fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
 
-                // write the scanlines as many as need
+                // coppying the pixel in the buffer
                 for (int m = 0; m < scale; m++)
                 {
-                    fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+                    buff[count] = triple;
+                    count++;
                 }
             }
 
-            // skip over padding, if any (in the infile, to prepare to move to the next row)
+            // skeep the infile padding
             fseek(inptr, padding_in, SEEK_CUR);
 
-            // add the padding again to the outptr file
-            for (int k = 0; k < padding_out; k++)
+            // writing the rows in the outfile
+            for (int n = 0; n < scale; n++)
             {
-                fputc(0x00, outptr);
-            }
+                // writing the all the pixels to the outfile row
+                fwrite(buff, sizeof(RGBTRIPLE), bi.biWidth, outptr);
 
-            // skip the rejected horizontal line
-            fseek(inptr, ((sizeof(RGBTRIPLE) * originalHeight) + padding_in), SEEK_CUR);
+                // adding the padding agian
+                for (int k = 0; k < padding_out; k++)
+                {
+                    fputc(0x00, outptr);
+                }
+            }
         }
+
+        // free the alocated memory
+        free(buff);
     }
 
     // For same size, copy and paste
