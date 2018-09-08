@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+
 #include "bmp.h"
 
 int main(int argc, char* argv[])
@@ -261,4 +262,3 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-
